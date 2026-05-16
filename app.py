@@ -26,6 +26,35 @@ from text_to_sql import (  # noqa: E402
     is_select_only,
     run_sql,
 )
+from init_db import clean, load_csv, write_to_db  # noqa: E402
+
+
+# Paths to the source CSV and the SQLite database.
+CSV_PATH = os.path.join(PROJECT_ROOT, "data", "superstore.csv")
+DB_PATH = os.path.join(PROJECT_ROOT, "data", "sales.db")
+
+
+def ensure_database() -> None:
+    """Build sales.db from superstore.csv if the database is missing.
+
+    Runs the same pipeline as scripts/init_db.py (load CSV -> clean ->
+    write to SQLite) so the app works on a fresh checkout without
+    requiring the user to run the init script manually.
+    """
+    if os.path.exists(DB_PATH):
+        return
+    if not os.path.exists(CSV_PATH):
+        raise FileNotFoundError(
+            f"Cannot bootstrap database: source CSV not found at {CSV_PATH}"
+        )
+    df = load_csv()
+    df = clean(df)
+    write_to_db(df)
+
+
+# Bootstrap the database at import time so every code path below
+# (queries, schema display, etc.) can assume sales.db exists.
+ensure_database()
 
 
 # Schema description shown in the sidebar.
